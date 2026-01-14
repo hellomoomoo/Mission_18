@@ -31,7 +31,7 @@ def save_data(filepath: str, data: List[dict]):
 # 모든 영화 목록 조회
 def get_all_movies() -> List[Movie]:
     data = load_data(MOVIES_FILE)
-    return (Movie(**item) for item in data)
+    return [Movie(**item) for item in data]  # 리스트로 반환
 
 # 영화 ID로 조회
 def get_movie_by_id(movie_id: int) -> Optional[Movie]:
@@ -42,30 +42,31 @@ def get_movie_by_id(movie_id: int) -> Optional[Movie]:
     return None
 
 # 새로운 영화 등록
-
 def add_movie(movie: Movie) -> Movie:
-    data = load_data(MOVIES_FILE)
+    data = load_data(MOVIES_FILE)  # 기존 영화 리스트 불러오기
 
-    # ID 자동 생성
-    if movies:
+    # ID 자동 생성 (기존 영화가 있으면 가장 큰 ID + 1, 없으면 1)
+    if data:
         movie.id = max(item["id"] for item in data) + 1
     else: 
         movie.id = 1
 
-    # data 추가 후 저장
-    movies.append(movie.dict())
-    save_data(MOVIES_FILE, movie)
+    # 새 영화를 리스트에 추가 후 저장
+    data.append(movie.model_dump())
+    save_data(MOVIES_FILE, data)
     return movie
 
 # 영화 삭제
 def delete_movie(movie_id: int) -> bool:
-    data = load_data(MOVIES_FILE)
-    movies = load_data(MOVIES_FILE)
-    original_length = len(movies)
+    data = load_data(MOVIES_FILE)  # 기존 영화 리스트 불러오기
+    original_length = len(data)
 
-    # 해당 ID가 아닌 영화들만 남겨놓기
-    if len(movies) > original_length:
-        save_data(MOVIES_FILE, movies)
+    # 해당 ID가 아닌 영화들만 남겨놓기 (필터링)
+    data = [movie for movie in data if movie["id"] != movie_id]
+    
+    # 실제로 삭제되었는지 확인 (리스트 길이가 줄었으면 삭제 성공)
+    if len(data) < original_length:
+        save_data(MOVIES_FILE, data)
         return True
     return False
 
@@ -74,12 +75,13 @@ def delete_movie(movie_id: int) -> bool:
 # 모든 리뷰 조회
 def get_all_reviews() -> List[Review]:
     data = load_data(REVIEWS_FILE)
-    return [Review(**Review) for review in data]
+    return [Review(**review) for review in data]  # 대소문자 수정
 
 # 특정 영화 리뷰 조회
 def get_reviews_by_movie(movie_id: int) -> List[Review]:
     reviews = load_data(REVIEWS_FILE)
-    movie_reviews = [r for r in reviews if r["movie_id"]] == movie_id
+    # 해당 영화 ID와 일치하는 리뷰만 필터링
+    movie_reviews = [r for r in reviews if r["movie_id"] == movie_id]
     return [Review(**review) for review in movie_reviews]
 
 # 새 리뷰 등록
@@ -95,7 +97,7 @@ def create_review(review: Review) -> Review:
     # 작성 시간 자동 생성
     review.created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    reviews.append(review.dict())
+    reviews.append(review.model_dump())
     save_data(REVIEWS_FILE, reviews)
     return review 
 
@@ -104,6 +106,7 @@ def delete_review(review_id: int) -> bool:
     reviews = load_data(REVIEWS_FILE)
     original_length = len(reviews)
     
+    # 해당 ID가 아닌 리뷰들만 남기기
     reviews = [r for r in reviews if r["id"] != review_id]
     
     if len(reviews) < original_length:
