@@ -1,0 +1,18 @@
+[
+    {
+        "id": 1,
+        "title": "인터스텔라",
+        "release_date": "2014-11-06",
+        "director": "크리스토퍼 놀란",
+        "genre": "SF",
+        "poster_url": "https://example.com/poster.jpg"
+    },
+    {
+        "id": 2,
+        "title": "인터스텔라",
+        "release_date": "2014-11-06",
+        "director": "크리스토퍼 놀란",
+        "genre": "SF",
+        "poster_url": "https://i.namu.wiki/i/qnfv6dUwAyq5eu94FAsUB5FQZ4QY7y6nZk2f5NtoahVUx09rr9ikkghsa3ZaqGD0ZhIfWi6kKi9HBMgZ7Nfc8w.webp"
+    }
+]
