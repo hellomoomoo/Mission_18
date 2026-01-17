@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from models import Movie, Review
 import database as db
+import sentiment as sentiment_analyzer
 
 # FastAPI 앱 생성
 
@@ -121,7 +122,7 @@ def get_movie_reviews(movie_id: int):
     reviews = db.get_reviews_by_movie(movie_id)
     return reviews
 
-# 새로운 리뷰 작성
+# 새로운 리뷰 작성(감성 분석 자동 추가 - 디버깅)
 @app.post("/reviews", response_model=Review)
 def create_review(review: Review):
     """
@@ -141,13 +142,17 @@ def create_review(review: Review):
         생성된 Review 객체 (id, 작성시간 포함)
         
     Note:
-        나중에 sentiment_score는 sentiment.py에서 자동 분석해서 추가 예정
+        sentiment_score는 리뷰 작성 시 자동으로 감성 분석되어 저장됨 ( 0~1 사이 값 )
     """
     # 영화가 존재하는지 확인
     movie = db.get_movie_by_id(review.movie_id)
     if not movie:
         raise HTTPException(status_code=404, detail="해당 영화를 찾을 수 없습니다. 영화 ID를 다시 한 번 확인해주세요.")
     
+    # 감성 분석 자동 추가 - 디버깅
+    if review.content:
+        review.sentiment_score = sentiment_analyzer.analyze_sentiment(review.content)
+
     new_review = db.create_review(review)
     return new_review
 
