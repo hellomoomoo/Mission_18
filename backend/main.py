@@ -94,6 +94,39 @@ def delete_movie(movie_id: int):
         raise HTTPException(status_code=404, detail="영화를 찾을 수 없습니다. 영화 ID를 다시 한 번 확인해주세요")
     return {"message": "영화가 삭제되었습니다."}
 
+# 영화 정보 수정
+@app.put("/movies/{movie_id}", response_model=Movie)
+def update_movie(movie_id: int, movie: Movie):
+    """
+    PUT http://localhost:8000/movies/1
+    
+    Args:
+        movie_id: 수정할 영화 ID
+        movie: 수정할 영화 정보
+        
+    Returns:
+        수정된 Movie 객체
+    """
+
+    # 기존 영화 확인
+    existing_movie = db.get_movie_by_id(movie_id)
+    if not existing_movie:
+        raise HTTPException(status_code=404, detail="영화를 찾을 수 없습니다.")
+    
+    # ID 유지 (요청 body의 id는 무시하고 URL의 movie_id 사용)
+    movie.id = movie_id
+    
+    # 데이터 업데이트
+    data = db.load_data(db.MOVIES_FILE)
+    for i, m in enumerate(data):
+        if m["id"] == movie_id:
+            data[i] = movie.model_dump()
+            break
+
+    db.save_data(db.MOVIES_FILE, data)
+    return movie
+
+
 # --- 리뷰 관련 엔드포인트 ---
 
 # 모든 리뷰 조회
