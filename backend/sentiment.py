@@ -48,17 +48,10 @@ def load_model():
 
     return _model, _tokenizer
 
+# 클래스 label이 2개가 아니라 11개인 걸 깨닫고나서 수정 들어감
 def analyze_sentiment(text: str) -> float:
     """
     텍스트에서 감성을 분석하여 0~1 사이의 점수를 반환
-
-    Args:
-        text: 분석할 리뷰 텍스트 (ex: "시간 가는 줄 모르고 재밌게 봤음")
-
-    Returns:
-        float: 감성 점수
-            - 1에 가까울수록 긍정적
-            - 0에 가까울수록 부정적 (0.5 근처면 중립)
     """
 
     # 빈 텍스트 처리
@@ -87,34 +80,45 @@ def analyze_sentiment(text: str) -> float:
     # dim=1: 마지막 차원(클래스 차원)에 대해 softmax 적용
     probabilities = torch.nn.functional.softmax(outputs.logits, dim=1)
 
+    # -----디버깅: 클래스 레이블 확인-----
+    # print(f"\n모델 클래스 레이블: {_model.config.id2label}")
+    # print(f"확률 분포: {probabilities[0].tolist()}")
+    # ----------------------------------
 
-    # 긍정 확률 추출
-    # probabilities[0]: 첫 번째 배치의 결과
-    # .item(): 텐서에서 파이썬 숫자로 변환
-    positive_score = probabilities[0][0].item() # 인덱스 잘못되어 있어서 수정 1 -> 0
+    # 감정 인덱스 매핑 - 디버깅 후 추가
 
-    return positive_score
+    positive_indices = [0, 1, 2, 3, 4]
+    # 0(기쁨), 1(고마운), 2(설레는), 3(사랑하는), 4(즐거운)
+    negative_indices = [7, 8, 9, 10]
+    # 7(슬픔), 8(힘듦), 9(짜증남), 10(걱정스러운)
+    neutral_indices = [5, 6]
+    # 5(일상적인), 6(생각이 많은)
+
+    # 감정 그룹의 확률 합계를 계산하는 부분 한줄코딩
+    positive_score = sum(probabilities[0][i].item() for i in positive_indices)
+    negative_score = sum(probabilities[0][i].item() for i in negative_indices)
+    neutral_score = sum(probabilities[0][i].item() for i in neutral_indices)
+
+    # 긍정 +중립*0.5 비율로 최종 점수 계산
+    # 중립은 절반만 긍정으로 계산
+    total = positive_score + negative_score + neutral_score
+
+    if total == 0:
+        return 0.5
+    
+    # 긍정 비율 계산 (중립은 0.5 가중치)
+    sentiment_score = (positive_score + neutral_score*0.5) / total
+
+    return sentiment_score
+
 
 def analyze_sentiment_batch(texts: list) -> list:
     """
-    여러 텍스트를 한 번에 분석 (배치 처리로 더 빠름)
-
-    Args:
-        texts: 분석할 텍스트 리스트
-    
-    Returns:
-        list: 각 텍스트의 감성 점수 리스트
-    
-    Example:
-        >>> analyze_sentiment_batch(["좋아요", "별로예요", "그냥 그래요"])
-        [0.92, 0.15, 0.48]
+    여러 텍스트를 한 번에 분석 (배치 처리)
     """
-
-     # 빈 리스트 처리
     if not texts:
         return []
     
-    # 빈 문자열 필터링 및 중립 점수 할당
     processed_texts = []
     empty_indices = []
     
@@ -124,15 +128,12 @@ def analyze_sentiment_batch(texts: list) -> list:
         else:
             empty_indices.append(i)
     
-    # 모든 텍스트가 비어있으면 중립 점수 반환
     if not processed_texts:
         return [0.5] * len(texts)
     
-    # 모델 로드
-    model, tokenizer = load_model()
+    _model, _tokenizer = load_model()
     
-    # 배치 토크나이징
-    inputs = tokenizer(
+    inputs = _tokenizer(
         processed_texts,
         return_tensors="pt",
         padding=True,
@@ -140,21 +141,37 @@ def analyze_sentiment_batch(texts: list) -> list:
         max_length=512
     )
     
-    # 배치 예측
     with torch.no_grad():
-        outputs = model(**inputs)
+        outputs = _model(**inputs)
     
-    # 확률 변환
     probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)
     
-    # 긍정 확률 추출
-    positive_scores = probabilities[:, 1].tolist()
+    # 감정 인덱스 매핑
+    positive_indices = [0, 1, 2, 3, 4]
+    negative_indices = [7, 8, 9, 10]
+    neutral_indices = [5, 6]
+    
+    scores = []
+    for i in range(len(processed_texts)):
+        positive_score = sum(probabilities[i][idx].item() for idx in positive_indices)
+        negative_score = sum(probabilities[i][idx].item() for idx in negative_indices)
+        neutral_score = sum(probabilities[i][idx].item() for idx in neutral_indices)
+        
+        total = positive_score + negative_score + neutral_score
+        
+        if total == 0:
+            scores.append(0.5)
+        else:
+            # 괄호 추가!
+            sentiment_score = (positive_score + neutral_score * 0.5) / total
+            scores.append(sentiment_score)
     
     # 빈 텍스트 위치에 중립 점수 삽입
     for idx in empty_indices:
-        positive_scores.insert(idx, 0.5)
+        scores.insert(idx, 0.5)
     
-    return positive_scores
+    return scores
+    
 
 
 # 테스트 코드 (이 파일을 직접 실행했을 때만 작동)
