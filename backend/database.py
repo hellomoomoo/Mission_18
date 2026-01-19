@@ -41,20 +41,34 @@ def get_movie_by_id(movie_id: int) -> Optional[Movie]:
             return Movie(**movie)
     return None
 
-# 새로운 영화 등록
+# 새로운 영화 등록 - DB 관련 트러블슈팅으로 디버깅 / 코드가 불완전해서 다시 디버깅
 def add_movie(movie: Movie) -> Movie:
     data = load_data(MOVIES_FILE)  # 기존 영화 리스트 불러오기
 
-    # ID 자동 생성 (기존 영화가 있으면 가장 큰 ID + 1, 없으면 1)
-    if data:
-        movie.id = max(item["id"] for item in data) + 1
-    else: 
-        movie.id = 1
+    # ID 자동 생성 - 역대 최대 ID 추적 (삭제된 것도 포함)
+    # 파일에서 지금까지 사용된 가장 큰 ID를 찾아서 +1
+    id_counter_file = 'last_movie_id.txt'
+    
+    try:
+        with open(id_counter_file, 'r') as f:
+            last_id = int(f.read().strip())
+    except FileNotFoundError:
+        # 파일이 없으면 현재 데이터에서 최대값 찾기
+        last_id = max([item["id"] for item in data], default=0)
 
-    # 새 영화를 리스트에 추가 후 저장
+    # 새 ID 할당
+    movie.id = last_id + 1
+    
+    # 새 ID를 파일에 저장
+    with open(id_counter_file, 'w') as f:
+        f.write(str(movie.id))
+    
+    # 영화 데이터에 추가하고 저장 (이 부분이 빠졌었음)
     data.append(movie.model_dump())
     save_data(MOVIES_FILE, data)
     return movie
+
+    
 
 # 영화 삭제
 def delete_movie(movie_id: int) -> bool:
@@ -84,22 +98,31 @@ def get_reviews_by_movie(movie_id: int) -> List[Review]:
     movie_reviews = [r for r in reviews if r["movie_id"] == movie_id]
     return [Review(**review) for review in movie_reviews]
 
-# 새 리뷰 등록
+# 새 리뷰 등록 - 얘도 디버깅 또 또 ...
 def create_review(review: Review) -> Review:
     reviews = load_data(REVIEWS_FILE)
 
     # ID 자동 생성
-    if reviews:
-        review.id = max(r["id"] for r in reviews) + 1
-    else:
-        review.id = 1
+    id_counter_file = 'last_review_id.txt'
+    
+    try:
+        with open(id_counter_file, 'r') as f:
+            last_id = int(f.read().strip())
+    except FileNotFoundError:
+        last_id = max([r["id"] for r in reviews], default=0)
+    
+    review.id = last_id + 1
+    
+    with open(id_counter_file, 'w') as f:
+        f.write(str(review.id))
 
     # 작성 시간 자동 생성
     review.created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
+    # 리뷰 추가하고 저장 (이 부분도 있어야 했음)
     reviews.append(review.model_dump())
     save_data(REVIEWS_FILE, reviews)
-    return review 
+    return review
 
 # 특정 리뷰 삭제
 def delete_review(review_id: int) -> bool:

@@ -73,7 +73,7 @@ def create_movie(movie: Movie):
     new_movie = db.add_movie(movie)
     return new_movie
 
-# 영화 삭제
+# 영화 삭제 - 디버깅(관련 리뷰도 함께 삭제하도록 로직 추가)
 @app.delete("/movies/{movie_id}")
 def delete_movie(movie_id: int):
     """
@@ -91,8 +91,19 @@ def delete_movie(movie_id: int):
 
     success = db.delete_movie(movie_id)
     if not success:
-        raise HTTPException(status_code=404, detail="영화를 찾을 수 없습니다. 영화 ID를 다시 한 번 확인해주세요")
-    return {"message": "영화가 삭제되었습니다."}
+        raise HTTPException(status_code=404, detail="영화를 찾을 수 없습니다.")
+    
+    # 해당 영화의 모든 리뷰도 함께 삭제
+    reviews = db.load_data(db.REVIEWS_FILE)
+    original_count = len(reviews)
+    reviews = [r for r in reviews if r["movie_id"] != movie_id]
+    deleted_reviews = original_count - len(reviews)
+    db.save_data(db.REVIEWS_FILE, reviews)
+
+    return {
+        "message": f"영화가 삭제되었습니다. (리뷰 {deleted_reviews}개도 함께 삭제됨)",
+        "deleted_reviews": deleted_reviews
+    }
 
 # 영화 정보 수정
 @app.put("/movies/{movie_id}", response_model=Movie)
@@ -140,7 +151,7 @@ def get_all_reviews():
     return reviews
 
 # 특정 영화 모든 리뷰 조회
-@app.get("/reviews/{movie_id}/reviews", response_model=List[Review])
+@app.get("/movies/{movie_id}/reviews", response_model=List[Review])
 def get_movie_reviews(movie_id: int):
     """
     GET http://localhost:8000/movies/1/reviews
