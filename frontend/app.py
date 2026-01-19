@@ -121,7 +121,62 @@ def get_sentiment_label(score):
         return "중립"
     else:
         return "부정"
+    
 
+
+# UI 아쉬워서 추가하는 코드
+def render_sentiment_bar(score, show_label=True):
+    """
+    감성 점수를 시각적으로 표현하는 커스텀 bar
+    
+    Args:
+        score: 0~1 사이의 감성 점수
+        show_label: 점수와 레이블 표시 여부
+    """
+    position = score * 100
+    
+    if score >= 0.5:
+        arrow = "↑"
+        arrow_color = "#10b981"
+        label_text = "긍정"
+    else:
+        arrow = "↓"
+        arrow_color = "#ef4444"
+        label_text = "부정"
+    
+    label_html = ""
+    if show_label:
+        label_html = f"""
+<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 15px;">
+<div style="background: white; padding: 10px 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;">
+<div style="font-size: 2em; font-weight: bold; color: {arrow_color};">
+{arrow} {score:.3f}
+</div>
+<div style="font-size: 1.2em; color: {arrow_color}; font-weight: bold;">
+{label_text}
+</div>
+</div>
+</div>
+"""
+    
+    html = f"""
+<div style="margin: 20px 0;">
+{label_html}
+<div style="display: flex; justify-content: space-between; padding: 0 10px; margin-bottom: 5px;">
+<span style="font-size: 1.5em;">😫</span>
+<span style="font-size: 1.5em;">🤔</span>
+<span style="font-size: 1.5em;">🤗</span>
+</div>
+<div style="position: relative; height: 35px; background: linear-gradient(to right, #ef4444 0%, #fbbf24 50%, #10b981 100%); border-radius: 20px; box-shadow: 0 3px 6px rgba(0,0,0,0.15);">
+<div style="position: absolute; left: {position}%; top: 50%; transform: translate(-50%, -50%);">
+<span style="font-size: 1.8em; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));">🚩</span>
+</div>
+</div>
+</div>
+</div>
+"""
+    
+    st.markdown(html, unsafe_allow_html=True)
 
 # API 호출 함수들
 
@@ -251,12 +306,7 @@ def show_home():
                 sentiment_data = get_average_sentiment(movie['id'])
                 if sentiment_data and sentiment_data.get('average_sentiment') is not None:
                     avg_score = sentiment_data['average_sentiment']
-                    st.metric(
-                        label="평균 감성 점수",
-                        value=f"{avg_score:.2f}",
-                        delta=get_sentiment_label(avg_score)
-                    )
-                    st.progress(avg_score)
+                    render_sentiment_bar(avg_score, show_label=True)
 
 
 def show_movie_add():
@@ -436,22 +486,7 @@ def show_review_write():
                             score = review.get('sentiment_score', 0.5)
                             
                             st.subheader("🎯 감성 분석 결과")
-                            
-                            col1, col2, col3 = st.columns(3)
-                            
-                            with col1:
-                                st.metric(label="감성 점수", value=f"{score:.3f}")
-                            
-                            with col2:
-                                st.metric(label="감성 분류", value=get_sentiment_label(score))
-                            
-                            with col3:
-                                st.markdown(
-                                    f"<h1 style='text-align: center;'>{get_sentiment_emoji(score)}</h1>",
-                                    unsafe_allow_html=True
-                                )
-                            
-                            st.progress(score)
+                            render_sentiment_bar(score, show_label=True)
                             
                             # 풍선 제거
                             import time
@@ -485,18 +520,7 @@ def show_review_list():
                 if sentiment_data and sentiment_data.get('average_sentiment') is not None:
                     avg_score = sentiment_data['average_sentiment']
                     
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("평균 감성 점수", f"{avg_score:.3f}")
-                    with col2:
-                        st.metric("전체 평가", get_sentiment_label(avg_score))
-                    with col3:
-                        st.markdown(
-                            f"<h1 style='text-align: center;'>{get_sentiment_emoji(avg_score)}</h1>",
-                            unsafe_allow_html=True
-                        )
-                    
-                    st.progress(avg_score)
+                    render_sentiment_bar(avg_score, show_label=True)
                 
                 st.divider()
                 
@@ -512,7 +536,7 @@ def show_review_list():
                         </div>
                     """, unsafe_allow_html=True)
                     
-                    st.progress(score)
+                    render_sentiment_bar(score, show_label=False)
 
 
 # 메인 앱
