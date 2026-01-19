@@ -30,5 +30,13 @@
         "director": "박찬욱",
         "genre": "드라마",
         "poster_url": "https://search.pstatic.net/common?quality=75&direct=true&src=https%3A%2F%2Fmovie-phinf.pstatic.net%2F20111223_268%2F1324566765333lxqHM_JPEG%2Fmovie_image.jpg"
+    },
+    {
+        "id": 10,
+        "title": "케이팝 데몬 헌터스",
+        "release_date": "2025-06-20",
+        "director": "메기 강",
+        "genre": "애니메이션, 액션",
+        "poster_url": "https://search.pstatic.net/common?quality=75&direct=true&src=https%3A%2F%2Fmovie-phinf.pstatic.net%2F20250616_285%2F1750048075685fP0Ky_JPEG%2Fmovie_image.jpg"
     }
 ]
