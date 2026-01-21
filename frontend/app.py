@@ -307,7 +307,42 @@ def show_home():
                 if sentiment_data and sentiment_data.get('average_sentiment') is not None:
                     avg_score = sentiment_data['average_sentiment']
                     render_sentiment_bar(avg_score, show_label=True)
-
+        
+        # 최근 리뷰 10개 표시 - 기능 추가
+        st.markdown("---")
+        st.markdown("## 📝 최근 리뷰")
+        
+        try:
+            response = requests.get(f"{API_URL}/reviews")
+            if response.status_code == 200:
+                all_reviews = response.json()
+                
+                # 최근 10개만 (등록일 기준 내림차순)
+                recent_reviews = sorted(
+                    all_reviews, 
+                    key=lambda x: x['created_at'], 
+                    reverse=True
+                )[:10]
+                
+                if recent_reviews:
+                    for review in recent_reviews:
+                        # 영화 정보 가져오기
+                        movie_response = requests.get(f"{API_URL}/movies/{review['movie_id']}")
+                        movie_title = movie_response.json()['title'] if movie_response.status_code == 200 else "알 수 없음"
+                        
+                        with st.container():
+                            col1, col2 = st.columns([3, 1])
+                            with col1:
+                                st.markdown(f"**🎬 {movie_title}**")
+                                st.markdown(f"✍️ {review['author']} | 📅 {review['created_at'][:10]}")
+                                st.markdown(f"💬 {review['content']}")
+                            with col2:
+                                render_sentiment_bar(review['sentiment_score'])
+                            st.markdown("---")
+                else:
+                    st.info("아직 작성된 리뷰가 없습니다.")
+        except Exception as e:
+            st.error(f"리뷰를 불러올 수 없습니다: {e}")
 
 def show_movie_add():
     """영화 등록 페이지"""

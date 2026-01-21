@@ -38,5 +38,13 @@
         "director": "메기 강",
         "genre": "애니메이션, 액션",
         "poster_url": "https://search.pstatic.net/common?quality=75&direct=true&src=https%3A%2F%2Fmovie-phinf.pstatic.net%2F20250616_285%2F1750048075685fP0Ky_JPEG%2Fmovie_image.jpg"
+    },
+    {
+        "id": 11,
+        "title": "케빈에 대하여",
+        "release_date": "2012-07-26",
+        "director": "린 램지",
+        "genre": "스릴러, 드라마",
+        "poster_url": "https://i.namu.wiki/i/Qig3BJaOvZHUvk-nKzZowyfXfGuJiDN2uZYp2UylFUzJ1uraUh-9l0HGLZtgRNLKhlU6tsVc5ybfnxPJPzmWbCgIh9iNdAGG-QHl_5ILo-SnunJSdEPRVBziD1hvuO-03T1ILDM_7g_E237DsxbjVA.webp"
     }
 ]
